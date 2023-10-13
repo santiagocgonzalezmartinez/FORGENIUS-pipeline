@@ -3,7 +3,7 @@ FORGENIUS-pipeline
 SCGM & MW
 2023-10-13
 
-Another time, gosh, this is fucking annoying!
+My final try! Here is some data about cars
 
 ``` r
 summary(cars)
@@ -17,7 +17,7 @@ summary(cars)
     ##  3rd Qu.:19.0   3rd Qu.: 56.00  
     ##  Max.   :25.0   Max.   :120.00
 
-…including a plot!
+And a plot!
 
 ``` r
 summary(pressure)
@@ -37,4 +37,4 @@ plot(pressure)
 
 ![](FORGENIUS-pipeline_files/figure-gfm/pressure-1.png)<!-- -->
 
-That’s it!
+That’s it! Alé

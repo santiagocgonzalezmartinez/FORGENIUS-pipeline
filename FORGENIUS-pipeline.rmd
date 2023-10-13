@@ -9,17 +9,17 @@ output: github_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Another time, gosh, this is fucking annoying!
+My final try! Here is some data about cars
 
 ```{r cars}
 summary(cars)
 ```
 
-...including a plot!
+And a plot!
 
 ```{r pressure}
 summary(pressure)
 plot(pressure)
 ```
 
-That's it!
+That's it! Alé
