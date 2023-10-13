@@ -9,7 +9,7 @@ output: github_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-My final try! Here is some data about cars
+We start by getting some data from VCFs and making genepop files
 
 ```{r cars}
 summary(cars)

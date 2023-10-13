@@ -3,7 +3,7 @@ FORGENIUS-pipeline
 SCGM & MW
 2023-10-13
 
-My final try! Here is some data about cars
+We start by getting some data from VCFs and making genepop files
 
 ``` r
 summary(cars)
