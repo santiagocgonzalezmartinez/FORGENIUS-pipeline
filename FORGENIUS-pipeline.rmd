@@ -1,0 +1,24 @@
+---
+title: "FORGENIUS-pipeline"
+author: "SCGM & MW"
+date: "`r Sys.Date()`"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This is a first try...
+
+```{r cars}
+summary(cars)
+```
+
+...including a plot!
+
+```{r pressure}
+plot(pressure)
+```
+
+That's it!
