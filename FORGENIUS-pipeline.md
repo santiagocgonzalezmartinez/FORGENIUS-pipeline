@@ -1,7 +1,7 @@
 FORGENIUS-pipeline
 ================
 SCGM & MW
-2023-10-13
+2024-01-15
 
 We start by getting some data from VCFs and making genepop files
 
@@ -37,4 +37,4 @@ plot(pressure)
 
 ![](FORGENIUS-pipeline_files/figure-gfm/pressure-1.png)<!-- -->
 
-That’s it! Alé
+That’s it! Alé. But now it will change, please.
