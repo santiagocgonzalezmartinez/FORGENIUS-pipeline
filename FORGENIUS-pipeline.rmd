@@ -4,15 +4,23 @@ author: "SCGM & MW"
 date: "`r Sys.Date()`"
 output: github_document
 ---
+```{r load packages}
+library(vcfR)
+library(adegenet)
+```
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
-We start by getting some data from VCFs and making genepop files
-
-```{r cars}
-summary(cars)
+Get data from VCFs and make genind/genepop files
+```{r read data}
+data_vcf <- read.vcfR("data/Aalba_SNP_sampleFilt.vcf.gz")
+data_genind <- vcfR2genind(data_vcf)
+pop(data_genind) <- substr(indNames(data_genind), 1,8) #takes pop name from the first 8 digits of sample name, e.g. AUT00215
+print(data_genind)
+data_genepop <- genind2genpop(data_genind)
+print(data_genepop)
+popNames(data_genepop)
 ```
 
 And a plot!
