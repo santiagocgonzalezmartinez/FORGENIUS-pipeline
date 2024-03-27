@@ -19,7 +19,7 @@ knitr::opts_chunk$set(echo = TRUE)
 Read data and convert to different formats
 
 ```{r read data}
-data_vcf <- read.vcfR("data/Phalepensis_SNP_sampleFilt.vcf.gz")
+data_vcf <- read.vcfR("data/Aalba_SNP_sampleFilt.vcf.gz") #change species name
 
 # adegenet formats (genind and genpop)
 data_genind <- vcfR2genind(data_vcf)
@@ -27,7 +27,10 @@ pop(data_genind) <- substr(indNames(data_genind), 1,8) #takes pop name from the 
 data_genpop <- genind2genpop(data_genind)
 print(data_genpop)
 pop_names<-popNames(data_genpop)
-write.csv(data_genind,"data_genind.csv")
+
+# counting individuals per population
+pop_labels <- data_genind@pop
+individuals_per_pop <- table(pop_labels)
 
 # hierfstat format
 data_hierfstat <- genind2hierfstat(data_genind,pop=NULL)
@@ -52,8 +55,7 @@ polymoprhic_loci <- 1-(monomorphic_counts/nb_loci)
 
 Compute basic stats with hierfstat
 
-```{r genetic diversity - expected heterozygosity}
-N<-n.ind.samp(data_hierfstat)
+```{r genetic diversity & inbreeding}
 Hs <- Hs(data_hierfstat)
 Ho <- Ho(data_hierfstat)
 Fis <- 1-(Ho/Hs)
@@ -62,7 +64,7 @@ Fis <- 1-(Ho/Hs)
 Print table
 
 ```{r print table}
-for (i in 1:length(monomorphic_counts)) {
-  cat(pop_names[i], ":", polymoprhic_loci[i], Hs[i], Fis[i], "\n")
-}
+table_results<-data.frame(unlist(nb_loci), unlist(individuals_per_pop), unlist(polymoprhic_loci), unlist(Hs), unlist(Fis))
+names (table_results) = c("nb_loci", "GCU", "N", "polymorphic_loci", "Hs", "Fis")
+write.csv(table_results,"table_results_Aalba.csv") #change species name
 ```
