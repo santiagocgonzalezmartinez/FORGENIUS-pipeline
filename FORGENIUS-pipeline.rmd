@@ -9,6 +9,7 @@ library(vcfR)
 library(adegenet)
 library(genepop)
 library(graph4lg)
+library(hierfstat)
 ```
 
 ```{r setup, include=FALSE}
@@ -18,7 +19,7 @@ knitr::opts_chunk$set(echo = TRUE)
 Read data and convert to different formats
 
 ```{r read data}
-data_vcf <- read.vcfR("data/Aalba_SNP_sampleFilt.vcf.gz")
+data_vcf <- read.vcfR("data/Phalepensis_SNP_sampleFilt.vcf.gz")
 
 # adegenet formats (genind and genpop)
 data_genind <- vcfR2genind(data_vcf)
@@ -26,10 +27,13 @@ pop(data_genind) <- substr(indNames(data_genind), 1,8) #takes pop name from the 
 data_genpop <- genind2genpop(data_genind)
 print(data_genpop)
 pop_names<-popNames(data_genpop)
+write.csv(data_genind,"data_genind.csv")
+
+# hierfstat format
+data_hierfstat <- genind2hierfstat(data_genind,pop=NULL)
 
 # genepop format
-# data_genepop <- suppressWarnings((genind_to_genepop(data_genind, output = "data.frame")))
-
+#genind_to_genepop(data_genind, output = "file.txt")
 
 ```
 
@@ -43,18 +47,22 @@ allele_freq <- tab(data_genpop)
 # Count monomorphic loci and missing loci per population
 monomorphic_counts <- rowSums(allele_freq == 1)
 nb_loci <- rowSums(allele_freq != "NA")/2
-
-# Print % polymorphic loci per population
-for (i in 1:length(monomorphic_counts)) {
-  cat(pop_names[i], ":", 1-(monomorphic_counts[i]/nb_loci[i]), "\n")
-}
+polymoprhic_loci <- 1-(monomorphic_counts/nb_loci)
 ```
 
-Compute genetic diversity - expected heterozygosity with genepop
+Compute basic stats with hierfstat
 
 ```{r genetic diversity - expected heterozygosity}
-#genedivFis(data_genepop, outputFile = 'genetic_diversity.txt')
-
+N<-n.ind.samp(data_hierfstat)
+Hs <- Hs(data_hierfstat)
+Ho <- Ho(data_hierfstat)
+Fis <- 1-(Ho/Hs)
 ```
 
-Produce a nice report
+Print table
+
+```{r print table}
+for (i in 1:length(monomorphic_counts)) {
+  cat(pop_names[i], ":", polymoprhic_loci[i], Hs[i], Fis[i], "\n")
+}
+```
