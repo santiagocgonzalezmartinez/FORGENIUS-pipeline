@@ -1,7 +1,7 @@
 FORGENIUS-pipeline
 ================
 SCGM & MW
-2024-03-26
+2024-03-27
 
 ``` r
 library(vcfR)
@@ -33,7 +33,21 @@ library(adegenet)
     ##    > tutorials/doc/questions: 'adegenetWeb()' 
     ##    > bug reports/feature requests: adegenetIssues()
 
-Get data from VCFs and make genind/genepop files
+``` r
+library(genepop)
+```
+
+    ## Warning: package 'genepop' was built under R version 4.3.3
+
+``` r
+library(graph4lg)
+```
+
+    ## Warning: package 'graph4lg' was built under R version 4.3.3
+
+    ## Welcome to 'graph4lg' package. Let's do landscape genetics analysis with graphs
+
+Read data and convert to different formats
 
 ``` r
 data_vcf <- read.vcfR("data/Aalba_SNP_sampleFilt.vcf.gz")
@@ -58,29 +72,10 @@ data_vcf <- read.vcfR("data/Aalba_SNP_sampleFilt.vcf.gz")
     ## All variants processed
 
 ``` r
+# adegenet formats (genind and genpop)
 data_genind <- vcfR2genind(data_vcf)
 pop(data_genind) <- substr(indNames(data_genind), 1,8) #takes pop name from the first 8 digits of sample name, e.g. AUT00215
-print(data_genind)
-```
-
-    ## /// GENIND OBJECT /////////
-    ## 
-    ##  // 413 individuals; 66,000 loci; 132,000 alleles; size: 248 Mb
-    ## 
-    ##  // Basic content
-    ##    @tab:  413 x 132000 matrix of allele counts
-    ##    @loc.n.all: number of alleles per locus (range: 2-2)
-    ##    @loc.fac: locus factor for the 132000 columns of @tab
-    ##    @all.names: list of allele names for each locus
-    ##    @ploidy: ploidy of each individual  (range: 2-2)
-    ##    @type:  codom
-    ##    @call: adegenet::df2genind(X = t(x), sep = sep)
-    ## 
-    ##  // Optional content
-    ##    @pop: population of each individual (group size range: 17-25)
-
-``` r
-data_genepop <- genind2genpop(data_genind)
+data_genpop <- genind2genpop(data_genind)
 ```
 
     ## 
@@ -89,7 +84,7 @@ data_genepop <- genind2genpop(data_genind)
     ## ...done.
 
 ``` r
-print(data_genepop)
+print(data_genpop)
 ```
 
     ## /// GENPOP OBJECT /////////
@@ -109,31 +104,51 @@ print(data_genepop)
     ##    - empty -
 
 ``` r
-popNames(data_genepop)
+pop_names<-popNames(data_genpop)
+
+# genepop format
+# data_genepop <- suppressWarnings((genind_to_genepop(data_genind, output = "data.frame")))
 ```
 
-    ##  [1] "AUT00179" "ITA00271" "SVN00025" "SVN00023" "ITA00260" "ROU00358"
-    ##  [7] "ROU00104" "ROU00389" "ROU00477" "AUT00215" "DEU00114" "FRA00006"
-    ## [13] "ITA00069" "FRA00019" "FRA00004" "ESP00339" "ITA00217" "ITA00029"
-
-And a plot!
+Compute number of polymorphic loci per population
 
 ``` r
-summary(pressure)
+# Estimate allele frequency in adegenet
+allele_freq <- tab(data_genpop)
+
+# Count monomorphic loci and missing loci per population
+monomorphic_counts <- rowSums(allele_freq == 1)
+nb_loci <- rowSums(allele_freq != "NA")/2
+
+# Print % polymorphic loci per population
+for (i in 1:length(monomorphic_counts)) {
+  cat(pop_names[i], ":", 1-(monomorphic_counts[i]/nb_loci[i]), "\n")
+}
 ```
 
-    ##   temperature     pressure       
-    ##  Min.   :  0   Min.   :  0.0002  
-    ##  1st Qu.: 90   1st Qu.:  0.1800  
-    ##  Median :180   Median :  8.8000  
-    ##  Mean   :180   Mean   :124.3367  
-    ##  3rd Qu.:270   3rd Qu.:126.5000  
-    ##  Max.   :360   Max.   :806.0000
+    ## AUT00179 : 0.9339848 
+    ## ITA00271 : 0.8660758 
+    ## SVN00025 : 0.9252121 
+    ## SVN00023 : 0.9186212 
+    ## ITA00260 : 0.9337424 
+    ## ROU00358 : 0.8841212 
+    ## ROU00104 : 0.8807879 
+    ## ROU00389 : 0.8859394 
+    ## ROU00477 : 0.8843939 
+    ## AUT00215 : 0.9374091 
+    ## DEU00114 : 0.9281061 
+    ## FRA00006 : 0.9395909 
+    ## ITA00069 : 0.9244545 
+    ## FRA00019 : 0.9345758 
+    ## FRA00004 : 0.9188333 
+    ## ESP00339 : 0.9408939 
+    ## ITA00217 : 0.9175303 
+    ## ITA00029 : 0.8441667
+
+Compute genetic diversity - expected heterozygosity with genepop
 
 ``` r
-plot(pressure)
+#genedivFis(data_genepop, outputFile = 'genetic_diversity.txt')
 ```
 
-![](FORGENIUS-pipeline_files/figure-gfm/pressure-1.png)<!-- -->
-
-And now what? Let’s try again. La mariposa es rosa, rosa es la mariposa.
+Produce a nice report

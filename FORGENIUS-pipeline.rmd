@@ -7,27 +7,54 @@ output: github_document
 ```{r load packages}
 library(vcfR)
 library(adegenet)
+library(genepop)
+library(graph4lg)
 ```
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-Get data from VCFs and make genind/genepop files
+
+Read data and convert to different formats
+
 ```{r read data}
 data_vcf <- read.vcfR("data/Aalba_SNP_sampleFilt.vcf.gz")
+
+# adegenet formats (genind and genpop)
 data_genind <- vcfR2genind(data_vcf)
 pop(data_genind) <- substr(indNames(data_genind), 1,8) #takes pop name from the first 8 digits of sample name, e.g. AUT00215
-print(data_genind)
-data_genepop <- genind2genpop(data_genind)
-print(data_genepop)
-popNames(data_genepop)
+data_genpop <- genind2genpop(data_genind)
+print(data_genpop)
+pop_names<-popNames(data_genpop)
+
+# genepop format
+# data_genepop <- suppressWarnings((genind_to_genepop(data_genind, output = "data.frame")))
+
+
 ```
 
-And a plot!
+Compute number of polymorphic loci per population
 
-```{r pressure}
-summary(pressure)
-plot(pressure)
+```{r number of polymorphic loci}
+
+# Estimate allele frequency in adegenet
+allele_freq <- tab(data_genpop)
+
+# Count monomorphic loci and missing loci per population
+monomorphic_counts <- rowSums(allele_freq == 1)
+nb_loci <- rowSums(allele_freq != "NA")/2
+
+# Print % polymorphic loci per population
+for (i in 1:length(monomorphic_counts)) {
+  cat(pop_names[i], ":", 1-(monomorphic_counts[i]/nb_loci[i]), "\n")
+}
 ```
 
-And now what? Let's try again. La mariposa es rosa, rosa es la mariposa.
+Compute genetic diversity - expected heterozygosity with genepop
+
+```{r genetic diversity - expected heterozygosity}
+#genedivFis(data_genepop, outputFile = 'genetic_diversity.txt')
+
+```
+
+Produce a nice report
