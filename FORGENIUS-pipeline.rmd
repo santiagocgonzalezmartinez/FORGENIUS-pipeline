@@ -5,11 +5,16 @@ date: "`r Sys.Date()`"
 output: github_document
 ---
 ```{r load packages}
+#IMPORTANT: don't change order of libraries as some mask others!
 library(vcfR)
 library(adegenet)
-library(genepop)
+#library(genepop)
 library(graph4lg)
 library(hierfstat)
+#library(VariantAnnotation)
+#library(genomation)
+#library(pegas)
+#library(GenomicRanges)
 ```
 
 ```{r setup, include=FALSE}
@@ -19,7 +24,15 @@ knitr::opts_chunk$set(echo = TRUE)
 Read data and convert to different formats
 
 ```{r read data}
-data_vcf <- read.vcfR("data/Aalba_SNP_sampleFilt.vcf.gz") #change species name
+data_vcf <- read.vcfR("data/Aalba_target.vcf.gz") #change species name
+
+# subset VCF files based on bed file - do it in vcftools?
+#bed_gr <- readBed("data/test_bed")
+#snp_positions <- GRanges(seqnames = data_vcf@fix$CHROM,                     ranges = IRanges(start = data_vcf@fix$POS, width = 1))
+# overlaps <- findOverlaps(snp_positions, bed)
+# vcf_filtered <- vcf[queryHits(overlaps),]
+#data_vcf_random <- subsetByOverlaps(data_vcf, bed_gr)
+#writeVcf(data_vcf_random, "data/subsetted_file.vcf")
 
 # adegenet formats (genind and genpop)
 data_genind <- vcfR2genind(data_vcf)
@@ -34,6 +47,9 @@ individuals_per_pop <- table(pop_labels)
 
 # hierfstat format
 data_hierfstat <- genind2hierfstat(data_genind,pop=NULL)
+
+# bayescan format
+#write.bayescan(dat=data_hierfstat,diploid=TRUE,fn="data.bayescan")
 
 # genepop format
 #genind_to_genepop(data_genind, output = "file.txt")
@@ -61,10 +77,17 @@ Ho <- Ho(data_hierfstat)
 Fis <- 1-(Ho/Hs)
 ```
 
+Compute average pairwise genetic differentiation with hierfstat
+
+```{r genetic differentiation}
+pairwise_WCfst <- pairwise.WCfst(data_hierfstat)
+fst_pop<-rowMeans(pairwise_WCfst, na.rm = TRUE)
+```
+
 Print table
 
 ```{r print table}
-table_results<-data.frame(unlist(nb_loci), unlist(individuals_per_pop), unlist(polymoprhic_loci), unlist(Hs), unlist(Fis))
-names (table_results) = c("nb_loci", "GCU", "N", "polymorphic_loci", "Hs", "Fis")
-write.csv(table_results,"table_results_Aalba.csv") #change species name
+table_results<-data.frame(unlist(nb_loci), unlist(individuals_per_pop), unlist(polymoprhic_loci), unlist(Hs), unlist(Fis), unlist(fst_pop))
+names (table_results) = c("nb_loci", "GCU", "N", "polymorphic_loci", "Hs", "Fis", "Fst-pop")
+write.csv(table_results,"table_results_Aalba_target.csv") #change species name
 ```

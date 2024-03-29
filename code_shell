@@ -1,0 +1,5 @@
+#Extract random SNPs using bed file
+vcftools --gzvcf Aalba_SNP_sampleFilt.vcf.gz --bed Aalba_random_regions.txt --recode --stdout | gzip -c > Aalba_SNP_sampleFilt.random.vcf.gz
+
+#Extract random SNPs using positions file (it doesn't work with gz files)
+vcftools --vcf Aalba_SNP_sampleFilt.vcf --positions target_SNPs_66k.txt --recode --stdout | gzip -c > Aalba_target.vcf.gz
