@@ -11,6 +11,7 @@ library(adegenet)
 #library(genepop)
 library(graph4lg)
 library(hierfstat)
+#library(radiator)
 #library(VariantAnnotation)
 #library(genomation)
 #library(pegas)
@@ -26,13 +27,7 @@ Read data and convert to different formats
 ```{r read data}
 data_vcf <- read.vcfR("data/Aalba_target.vcf.gz") #change species name
 
-# subset VCF files based on bed file - do it in vcftools?
-#bed_gr <- readBed("data/test_bed")
-#snp_positions <- GRanges(seqnames = data_vcf@fix$CHROM,                     ranges = IRanges(start = data_vcf@fix$POS, width = 1))
-# overlaps <- findOverlaps(snp_positions, bed)
-# vcf_filtered <- vcf[queryHits(overlaps),]
-#data_vcf_random <- subsetByOverlaps(data_vcf, bed_gr)
-#writeVcf(data_vcf_random, "data/subsetted_file.vcf")
+# subset VCF files based on bed file - do it in vcftools!
 
 # adegenet formats (genind and genpop)
 data_genind <- vcfR2genind(data_vcf)
@@ -48,12 +43,11 @@ individuals_per_pop <- table(pop_labels)
 # hierfstat format
 data_hierfstat <- genind2hierfstat(data_genind,pop=NULL)
 
-# bayescan format
-#write.bayescan(dat=data_hierfstat,diploid=TRUE,fn="data.bayescan")
+# bayescan format to external file
+write.bayescan(dat=data_hierfstat,diploid=TRUE,fn="data_bayescan")
 
-# genepop format
-#genind_to_genepop(data_genind, output = "file.txt")
-
+# genepop format to external file
+#genind_to_genepop(data_genind, output = "data_genepop.txt")
 ```
 
 Compute number of polymorphic loci per population
@@ -77,17 +71,43 @@ Ho <- Ho(data_hierfstat)
 Fis <- 1-(Ho/Hs)
 ```
 
-Compute average pairwise genetic differentiation with hierfstat
+Compute genetic distinctness
 
 ```{r genetic differentiation}
+# Average pairwise Fst
 pairwise_WCfst <- pairwise.WCfst(data_hierfstat)
-fst_pop<-rowMeans(pairwise_WCfst, na.rm = TRUE)
+ave_pairwise_fst<-rowMeans(pairwise_WCfst, na.rm = TRUE)
+
+# Population-specific Fst from bayescan
+
+#If you are running RStudio in Windows 10
+system2("powershell", arg = c("-file", "bayescan.ps1")) #check out running parameters in ps1 file
+source ("bayescan/plot_R.r")
+plot_bayescan("data_bayescan_fst.txt",add_text=T,pos=0.02,size=0.7,FDR=0.05)
+output_bayescan<-read.table("data_bayescan.sel")
+output_bayescan$logL<-NULL
+pop_specific_fst<-colMeans(output_bayescan, na.rm = TRUE)
+
+#If you are running RStudio in Linux - not tested yet!
+#scan.pops <- radiator::run_bayescan(
+#    data = "data_bayescan",
+#    n = 5000,
+#    thin = 10,
+#    nbp = 20,
+#    pilot = 5000,
+#    burn = 50000,
+#    subsample = NULL,
+#    iteration.subsample = 1,
+#    parallel.core = parallel::detectCores() - 1,
+#    pr_odds = 10,
+#    bayescan.path = "bayescan/BayeScan2.1_linux64bits"
+#    )
 ```
 
 Print table
 
 ```{r print table}
-table_results<-data.frame(unlist(nb_loci), unlist(individuals_per_pop), unlist(polymoprhic_loci), unlist(Hs), unlist(Fis), unlist(fst_pop))
-names (table_results) = c("nb_loci", "GCU", "N", "polymorphic_loci", "Hs", "Fis", "Fst-pop")
+table_results<-data.frame(unlist(nb_loci), unlist(individuals_per_pop), unlist(polymoprhic_loci), unlist(Hs), unlist(Fis), unlist(ave_pairwise_fst), unlist(pop_specific_fst))
+names (table_results) = c("nb_loci", "GCU", "N", "polymorphic_loci", "Hs", "Fis", "ave_pairwise_fst", "pop_specific_fst")
 write.csv(table_results,"table_results_Aalba_target.csv") #change species name
 ```
