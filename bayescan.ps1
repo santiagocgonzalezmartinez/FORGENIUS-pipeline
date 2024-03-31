@@ -1,1 +1,1 @@
-.\bayescan/BayeScan2.1_win32bits_cmd_line.exe data_bayescan -n 1000 -thin 10 -nbp 3 -pilot 500 -burn 5000 -pr_odds 10
+.\bayescan/BayeScan2.1_win32bits_cmd_line.exe data_bayescan -n 5000 -thin 10 -nbp 20 -pilot 5000 -burn 50000 -pr_odds 1000

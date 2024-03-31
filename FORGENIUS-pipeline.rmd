@@ -25,7 +25,7 @@ knitr::opts_chunk$set(echo = TRUE)
 Read data and convert to different formats
 
 ```{r read data}
-data_vcf <- read.vcfR("data/Aalba_target.vcf.gz") #change species name
+data_vcf <- read.vcfR("data/Msylvestris_SNPs_filt.vcf.gz") #change species name
 
 # subset VCF files based on bed file - do it in vcftools!
 
@@ -44,7 +44,7 @@ individuals_per_pop <- table(pop_labels)
 data_hierfstat <- genind2hierfstat(data_genind,pop=NULL)
 
 # bayescan format to external file
-write.bayescan(dat=data_hierfstat,diploid=TRUE,fn="data_bayescan")
+write.bayescan(dat=data_hierfstat,diploid=TRUE,fn="data_bayescan") #writting this file can take about 6 hours for 90k SNPs
 
 # genepop format to external file
 #genind_to_genepop(data_genind, output = "data_genepop.txt")
@@ -75,13 +75,13 @@ Compute genetic distinctness
 
 ```{r genetic differentiation}
 # Average pairwise Fst
-pairwise_WCfst <- pairwise.WCfst(data_hierfstat)
-ave_pairwise_fst<-rowMeans(pairwise_WCfst, na.rm = TRUE)
+pairwise_WCfst <- pairwise.WCfst(data_hierfstat) #this is very slow, took about 16 hours for 15 pops and 90k SNPs in a laptop
+ave_pairwise_fst<-rowMeans(pairwise_WCfst, na.rm = TRUE) 
 
 # Population-specific Fst from bayescan
 
 #If you are running RStudio in Windows 10
-system2("powershell", arg = c("-file", "bayescan.ps1")) #check out running parameters in ps1 file
+system2("powershell", arg = c("-file", "bayescan.ps1")) #check out running parameters in ps1 file; bayescan is very slow, took about xxx hours for 15 pops and 90k SNPs using 12 CPUs and standard parameters
 source ("bayescan/plot_R.r")
 plot_bayescan("data_bayescan_fst.txt",add_text=T,pos=0.02,size=0.7,FDR=0.05)
 output_bayescan<-read.table("data_bayescan.sel")
@@ -99,7 +99,7 @@ pop_specific_fst<-colMeans(output_bayescan, na.rm = TRUE)
 #    subsample = NULL,
 #    iteration.subsample = 1,
 #    parallel.core = parallel::detectCores() - 1,
-#    pr_odds = 10,
+#    pr_odds = 1000,
 #    bayescan.path = "bayescan/BayeScan2.1_linux64bits"
 #    )
 ```
@@ -107,7 +107,7 @@ pop_specific_fst<-colMeans(output_bayescan, na.rm = TRUE)
 Print table
 
 ```{r print table}
-table_results<-data.frame(unlist(nb_loci), unlist(individuals_per_pop), unlist(polymoprhic_loci), unlist(Hs), unlist(Fis), unlist(ave_pairwise_fst), unlist(pop_specific_fst))
-names (table_results) = c("nb_loci", "GCU", "N", "polymorphic_loci", "Hs", "Fis", "ave_pairwise_fst", "pop_specific_fst")
-write.csv(table_results,"table_results_Aalba_target.csv") #change species name
+table_results<-data.frame(unlist(individuals_per_pop), unlist(nb_loci), unlist(polymoprhic_loci), unlist(Hs), unlist(Fis), unlist(ave_pairwise_fst), unlist(pop_specific_fst), row.names = NULL)
+names (table_results) = c("GCU", "N", "nb_loci", "polymorphic_loci", "Hs", "Fis", "ave_pairwise_fst", "pop_specific_fst")
+write.csv(table_results,"table_results_Msylvestris.csv") #change species name
 ```
