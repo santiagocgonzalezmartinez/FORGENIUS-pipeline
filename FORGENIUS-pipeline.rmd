@@ -1,10 +1,16 @@
 ---
-title: "FORGENIUS-pipeline"
+title: "FORGENIUS-pipeline, test run 20 SNPs"
 author: "SCGM & MW"
 date: "`r Sys.Date()`"
 output: github_document
 ---
-```{r load packages}
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Load packages
+
+```{r load packages, message=F, warning=F}
 #IMPORTANT: don't change order of libraries as some mask others!
 library(vcfR)
 library(adegenet)
@@ -16,22 +22,22 @@ library(hierfstat)
 #library(genomation)
 #library(pegas)
 #library(GenomicRanges)
-```
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+library(LEA)
+#library(rnaturalearth)z
+library(dplyr)
 ```
 
 Read data and convert to different formats
 
-```{r read data}
-data_vcf <- read.vcfR("data/Msylvestris_SNPs_filt.vcf.gz") #change species name
+```{r read data, message=F, warning=F}
+data_vcf <- read.vcfR("data/Aalba_20SNPs.vcf.gz") #change species name
 
 # subset VCF files based on bed file - do it in vcftools!
 
 # adegenet formats (genind and genpop)
 data_genind <- vcfR2genind(data_vcf)
 pop(data_genind) <- substr(indNames(data_genind), 1,8) #takes pop name from the first 8 digits of sample name, e.g. AUT00215
+individual_names<-indNames(data_genind) #extract individual names
 data_genpop <- genind2genpop(data_genind)
 print(data_genpop)
 pop_names<-popNames(data_genpop)
@@ -44,10 +50,51 @@ individuals_per_pop <- table(pop_labels)
 data_hierfstat <- genind2hierfstat(data_genind,pop=NULL)
 
 # bayescan format to external file
-write.bayescan(dat=data_hierfstat,diploid=TRUE,fn="data_bayescan") #writting this file can take about 6 hours for 90k SNPs
+write.bayescan(dat=data_hierfstat,diploid=TRUE,fn="data_bayescan") #writting this file can take about 6 hours for 90k SNPs; better to store these files once generated!
+
+# structure format to external file
+write.struct(dat=data_hierfstat,ilab=individual_names,pop=NULL,MARKERNAMES=FALSE,MISSING=-9,fname="data_structure") #writting this file can take about xxx hours for 90k SNPs; better to store these files once generated!
+
+# geno format to external file
+struct2geno (input.file="data_structure", ploidy=2, FORMAT=2, extra.row=0, extra.column=1)
 
 # genepop format to external file
 #genind_to_genepop(data_genind, output = "data_genepop.txt")
+```
+
+Run admixture analysis with LEA
+
+```{r run SNMF, message=F, warning=F}
+# run SNMF
+data_snmf <- snmf(input.file = "data_structure.geno",
+                   K = 1:10, #indicate max number of K
+                   entropy = TRUE,
+                   repetitions = 5,
+                   project = "new",
+                   CPU = 10, #indicate the number of CPUs to use
+                   alpha = 100
+                  )
+```
+
+Estimate admixture coefficients
+
+```{r Estimate admixture coefficients}
+# processing sNMF results
+plot(data_snmf, cex = 1.2, col = "lightblue", pch = 19)
+best_K = 4  #select best K based of graph
+ce <-  cross.entropy(data_snmf, K = best_K)
+best_run <- which.min(ce)
+
+# plot barchart for best run of best K
+barchart (data_snmf, best_K, best_run, sort.by.Q = T, col = rainbow(best_K),border = NA, space = 0, xlab = "Individuals", ylab = "Admixture coefficients") #use "sort.by.Q = F, names.arg= individual_names, cex.names = 0.4, las=2, " to get ind labels
+
+# estimate ancestry coefficients by pop
+q_mat <- LEA::Q(data_snmf, K = best_K, run = best_run) 
+colnames(q_mat) <- paste0("Q", 1:best_K)
+q_matrix <- data.frame(unlist(q_mat))
+q_matrix <- q_matrix %>%
+  mutate(individual_names, pop_labels)
+q_by_pop <- aggregate(q_matrix[, 1:best_K], list(q_matrix$pop_labels), mean)
 ```
 
 Compute number of polymorphic loci per population
@@ -83,8 +130,8 @@ ave_pairwise_fst<-rowMeans(pairwise_WCfst, na.rm = TRUE)
 #If you are running RStudio in Windows 10
 system2("powershell", arg = c("-file", "bayescan.ps1")) #check out running parameters in ps1 file; bayescan is very slow, took about xxx hours for 15 pops and 90k SNPs using 12 CPUs and standard parameters
 source ("bayescan/plot_R.r")
-plot_bayescan("data_bayescan_fst.txt",add_text=T,pos=0.02,size=0.7,FDR=0.05)
-output_bayescan<-read.table("data_bayescan.sel")
+plot_bayescan("bayescan_results/data_bayescan_fst.txt",add_text=T,pos=0.02,size=0.7,FDR=0.05)
+output_bayescan<-read.table("bayescan_results/data_bayescan.sel")
 output_bayescan$logL<-NULL
 pop_specific_fst<-colMeans(output_bayescan, na.rm = TRUE)
 
@@ -107,7 +154,11 @@ pop_specific_fst<-colMeans(output_bayescan, na.rm = TRUE)
 Print table
 
 ```{r print table}
-table_results<-data.frame(unlist(individuals_per_pop), unlist(nb_loci), unlist(polymoprhic_loci), unlist(Hs), unlist(Fis), unlist(ave_pairwise_fst), unlist(pop_specific_fst), row.names = NULL)
-names (table_results) = c("GCU", "N", "nb_loci", "polymorphic_loci", "Hs", "Fis", "ave_pairwise_fst", "pop_specific_fst")
-write.csv(table_results,"table_results_Msylvestris.csv") #change species name
+# prepare dataframe with basic stats
+table_basic_stats<-data.frame(unlist(individuals_per_pop), unlist(nb_loci), unlist(polymoprhic_loci), unlist(Hs), unlist(Fis), unlist(ave_pairwise_fst), unlist(pop_specific_fst), row.names = NULL)
+names (table_basic_stats) = c("GCU", "N", "nb_loci", "polymorphic_loci", "Hs", "Fis", "ave_pairwise_fst", "pop_specific_fst")
+
+# merge dataframes in a single table
+table_results <- merge(table_basic_stats, q_by_pop, by.x = "GCU", by.y = "Group.1") # merge dataframes by GCU name, it orders the new dataframe alphabetically
+write.csv(table_results,"table_results_Aalba_20SNPs.csv") #change species name
 ```
