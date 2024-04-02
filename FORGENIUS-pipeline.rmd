@@ -150,9 +150,10 @@ ave_pairwise_fst<-rowMeans(pairwise_WCfst, na.rm = TRUE)
 # Population-specific Fst from bayescan
 
 #If you are running RStudio in Windows 10
-system2("powershell", arg = c("-file", "bayescan.ps1")) #check out running parameters in ps1 file; bayescan is very slow, took about 5 hours for 15 pops and 14k SNPs using 12 CPUs and standard parameters
+#system2("powershell", arg = c("-file", "bayescan.ps1")) #check out running parameters in ps1 file; bayescan is very slow, took about 5 hours for 15 pops and 14k SNPs using 12 CPUs and standard parameters
 
 #If you are running RStudio in Linux
+system2("powershell", arg = c("-file", "bayescan.ps1")) #check out running parameters in ps1 file; bayescan is very slow, took about 5 hours for 15 pops and 14k SNPs using 12 CPUs and standard parameters
 
 source ("bayescan/plot_R.r")
 plot_bayescan("bayescan/results/data_bayescan_fst.txt",add_text=T,pos=0.02,size=0.7,FDR=0.05)
