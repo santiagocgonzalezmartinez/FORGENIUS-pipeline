@@ -28,7 +28,7 @@ Read data and convert to different formats
 
 ```{r read data}
 
-species_name = "Aalba_20SNPs" #change species name
+species_name = "Aalba_SNP_sampleFilt_random" #change species name
 data_file <- paste("data/", species_name, ".vcf.gz", sep="")
 data_vcf <- read.vcfR(data_file) 
 
@@ -50,13 +50,13 @@ individuals_per_pop <- table(pop_labels)
 data_hierfstat <- genind2hierfstat(data_genind,pop=NULL)
 
 # bayescan format to external file
-write.bayescan(dat=data_hierfstat,diploid=TRUE,fn="data_bayescan") #writing this file can take about 6 hours for 90k SNPs; better to store these files once generated!
+write.bayescan(dat=data_hierfstat,diploid=TRUE,fn="bayescan/data_bayescan")
 
 # structure format to external file
 write.struct(dat=data_hierfstat,ilab=individual_names,pop=NULL,MARKERNAMES=FALSE,MISSING=-9,fname="snmf/data_structure") 
 
 # geno format to external file
-struct2geno (input.file="snmf/data_structure", ploidy=2, FORMAT=2, extra.row=0, extra.column=1) #writting this file can also take quite long
+struct2geno (input.file="snmf/data_structure", ploidy=2, FORMAT=2, extra.row=0, extra.column=1) #writting this file can take quite long
 
 # genepop format to external file - need to be fixed or try plink
 #source("functions/TJ_genind2genepop_function.R")
@@ -150,10 +150,10 @@ ave_pairwise_fst<-rowMeans(pairwise_WCfst, na.rm = TRUE)
 # Population-specific Fst from bayescan
 
 #If you are running RStudio in Windows 10
-#system2("powershell", arg = c("-file", "bayescan.ps1")) #check out running parameters in ps1 file; bayescan is very slow, took about 5 hours for 15 pops and 14k SNPs using 12 CPUs and standard parameters
+#system2("powershell", arg = c("-file", "bayescan.ps1")) #check out running parameters in ps1 file; bayescan is very slow in Windows, took about 5 hours for 15 pops and 14k SNPs using 12 CPUs and standard parameters
 
 #If you are running RStudio in Linux
-system2("powershell", arg = c("-file", "bayescan.ps1")) #check out running parameters in ps1 file; bayescan is very slow, took about 5 hours for 15 pops and 14k SNPs using 12 CPUs and standard parameters
+system2("./bayescan/BayeScan2.1_linux64bits", arg = "bayescan/data_bayescan -n 5000 -thin 10 -nbp 10 -pilot 5000 -burn 10000 -pr_odds 1000 -od bayescan/results")
 
 source ("bayescan/plot_R.r")
 plot_bayescan("bayescan/results/data_bayescan_fst.txt",add_text=T,pos=0.02,size=0.7,FDR=0.05)
