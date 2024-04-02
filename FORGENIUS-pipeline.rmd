@@ -56,7 +56,7 @@ write.bayescan(dat=data_hierfstat,diploid=TRUE,fn="bayescan/data_bayescan")
 write.struct(dat=data_hierfstat,ilab=individual_names,pop=NULL,MARKERNAMES=FALSE,MISSING=-9,fname="snmf/data_structure") 
 
 # geno format to external file
-struct2geno (input.file="snmf/data_structure", ploidy=2, FORMAT=2, extra.row=0, extra.column=1) #writting this file can take quite long
+struct2geno (input.file="snmf/data_structure", ploidy=2, FORMAT=2, extra.row=0, extra.column=1) #writing this file can take quite long
 
 # genepop format to external file - need to be fixed or try plink
 #source("functions/TJ_genind2genepop_function.R")
