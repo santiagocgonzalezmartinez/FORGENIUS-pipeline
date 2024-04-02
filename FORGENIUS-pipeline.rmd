@@ -1,5 +1,5 @@
 ---
-title: "FORGENIUS-pipeline, Aalba target"
+title: "FORGENIUS-pipeline, test 20 SNPs"
 author: "SCGM & MW"
 date: "`r Sys.Date()`"
 output: github_document
@@ -11,28 +11,26 @@ knitr::opts_chunk$set(echo = TRUE)
 Load packages
 
 ```{r load packages, message=F, warning=F}
+rm(list = ls()) # cleans the working environment
+
 #IMPORTANT: don't change order of libraries as some mask others!
 library(vcfR)
 library(adegenet)
-#library(genepop)
-library(graph4lg)
 library(hierfstat)
-#library(radiator)
-#library(VariantAnnotation)
-#library(genomation)
-#library(pegas)
-#library(GenomicRanges)
 library(LEA)
-library(rnaturalearth)
 library(dplyr)
 library(mapplots)
 library(shapefiles)
+library(miscTools)
 ```
 
 Read data and convert to different formats
 
 ```{r read data}
-data_vcf <- read.vcfR("data/Aalba_target_SNP_sampleFilt.vcf.gz") #change species name
+
+species_name = "Aalba_20SNPs" #change species name
+data_file <- paste("data/", species_name, ".vcf.gz", sep="")
+data_vcf <- read.vcfR(data_file) 
 
 # subset VCF files based on bed file - do it in vcftools!
 
@@ -52,16 +50,17 @@ individuals_per_pop <- table(pop_labels)
 data_hierfstat <- genind2hierfstat(data_genind,pop=NULL)
 
 # bayescan format to external file
-write.bayescan(dat=data_hierfstat,diploid=TRUE,fn="data_bayescan") #writting this file can take about 6 hours for 90k SNPs; better to store these files once generated!
+write.bayescan(dat=data_hierfstat,diploid=TRUE,fn="data_bayescan") #writing this file can take about 6 hours for 90k SNPs; better to store these files once generated!
 
 # structure format to external file
-write.struct(dat=data_hierfstat,ilab=individual_names,pop=NULL,MARKERNAMES=FALSE,MISSING=-9,fname="data_structure") 
+write.struct(dat=data_hierfstat,ilab=individual_names,pop=NULL,MARKERNAMES=FALSE,MISSING=-9,fname="snmf/data_structure") 
 
 # geno format to external file
-struct2geno (input.file="data_structure", ploidy=2, FORMAT=2, extra.row=0, extra.column=1) #writting this file can also take quite long
+struct2geno (input.file="snmf/data_structure", ploidy=2, FORMAT=2, extra.row=0, extra.column=1) #writting this file can also take quite long
 
-# genepop format to external file
-#genind_to_genepop(data_genind, output = "data_genepop.txt")
+# genepop format to external file - need to be fixed or try plink
+#source("functions/TJ_genind2genepop_function.R")
+#genind2genepop(data_genind,file = "data_genepop.txt")
 
 ```
 
@@ -69,7 +68,7 @@ Run admixture analysis with LEA
 
 ```{r run SNMF, include=FALSE}
 # run SNMF (use include=FALSE to remove annoying console output in report)
-data_snmf <- snmf(input.file = "data_structure.geno",
+data_snmf <- snmf(input.file = "snmf/data_structure.geno",
                    K = 1:10, #indicate max number of K
                    entropy = TRUE,
                    repetitions = 5,
@@ -83,13 +82,13 @@ Estimate admixture coefficients
 
 ```{r Estimate admixture coefficients}
 # processing sNMF results
-plot(data_snmf, cex = 1.2, col = "lightblue", pch = 19)
-best_K = 4  #select best K based on entropy graph
+plot(data_snmf, cex = 1.2, col = "lightblue", pch = 19) # run this line separately to determine best K
+best_K = 5  #select best K based on entropy graph
 ce <-  cross.entropy(data_snmf, K = best_K)
 best_run <- which.min(ce)
 
 # plot barchart for best run of best K
-barchart (data_snmf, best_K, best_run, sort.by.Q = T, col = rainbow(best_K),border = NA, space = 0, xlab = "Individuals", ylab = "Admixture coefficients") #use "sort.by.Q = F, names.arg= individual_names, cex.names = 0.4, las=2, " to get ind labels in original order
+barchart (data_snmf, best_K, best_run, sort.by.Q = T, col = rainbow(best_K), border = NA, space = 0, xlab = "Individuals", ylab = "Admixture coefficients") #use "sort.by.Q = F, names.arg= individual_names, cex.names = 0.4, las=2, " to get ind labels in original order
 
 # estimate ancestry coefficients by pop
 q_mat <- LEA::Q(data_snmf, K = best_K, run = best_run) 
@@ -99,14 +98,19 @@ q_matrix <- q_matrix %>%
   mutate(individual_names, pop_labels)
 q_by_pop <- aggregate(q_matrix[, 1:best_K], list(q_matrix$pop_labels), mean)
 
+# clean-up
+#remove.snmfProject("snmf/data_structure.snmfProject")
+
 # plot map for best K
-coord = read.table("data/Phalepensis_coord.txt", header = T) #change species name; GCU, longitude and latitude in this order
+data_coord <- paste("data/", species_name, "_coord.txt", sep="")
+coord = read.table(data_coord, header = T) #GCU, longitude and latitude in this order
 Npop = length(unique(pop_names))
 qmatrix2plot <- merge(coord, q_by_pop, by.x = "GCU", by.y = "Group.1")
-xlim <- c(-10,30) #adjust if needed
-ylim <- c(34,50)  #adjust if needed
+xlim <- c(-10,30) 
+ylim <- c(35,55)  #adjust if needed
 basemap(xlim, ylim) 
-shape <- read.shapefile("shapefiles/chorological_maps_dataset/Abies_alba_syn_plg_clip") #change species name, need to add Europe's coast line...
+#shape <- read.shapefile("shapefiles/chorological_maps_dataset/Abies_alba_plg") #change species name
+shape <- read.shapefile("shapefiles/Europe_merged")
 draw.shape(shape, col = "grey90")
 for (i in 1:Npop){
   z_var=NULL
@@ -147,26 +151,14 @@ ave_pairwise_fst<-rowMeans(pairwise_WCfst, na.rm = TRUE)
 
 #If you are running RStudio in Windows 10
 system2("powershell", arg = c("-file", "bayescan.ps1")) #check out running parameters in ps1 file; bayescan is very slow, took about 5 hours for 15 pops and 14k SNPs using 12 CPUs and standard parameters
+
+#If you are running RStudio in Linux
+
 source ("bayescan/plot_R.r")
-plot_bayescan("bayescan_results/data_bayescan_fst.txt",add_text=T,pos=0.02,size=0.7,FDR=0.05)
-output_bayescan<-read.table("bayescan_results/data_bayescan.sel")
+plot_bayescan("bayescan/results/data_bayescan_fst.txt",add_text=T,pos=0.02,size=0.7,FDR=0.05)
+output_bayescan<-read.table("bayescan/results/data_bayescan.sel")
 output_bayescan$logL<-NULL
 pop_specific_fst<-colMeans(output_bayescan, na.rm = TRUE)
-
-#If you are running RStudio in Linux - not tested yet!
-#scan.pops <- radiator::run_bayescan(
-#    data = "data_bayescan",
-#    n = 5000,
-#    thin = 10,
-#    nbp = 20,
-#    pilot = 5000,
-#    burn = 50000,
-#    subsample = NULL,
-#    iteration.subsample = 1,
-#    parallel.core = parallel::detectCores() - 1,
-#    pr_odds = 1000,
-#    bayescan.path = "bayescan/BayeScan2.1_linux64bits"
-#    )
 ```
 
 Print table
@@ -178,5 +170,6 @@ names (table_basic_stats) = c("GCU", "N", "nb_loci", "polymorphic_loci", "Hs", "
 
 # merge dataframes in a single table
 table_results <- merge(table_basic_stats, q_by_pop, by.x = "GCU", by.y = "Group.1") # merge dataframes by GCU name, it orders the new dataframe alphabetically
-write.csv(table_results,"table_results_Aalba_target.csv") #change species name
+data_print <- paste("results/table_results", species_name, ".csv", sep="")
+write.csv(table_results,"results/table_results_Aalba_20SNPs.csv")
 ```
