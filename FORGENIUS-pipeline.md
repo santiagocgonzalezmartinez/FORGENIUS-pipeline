@@ -1,7 +1,7 @@
 FORGENIUS-pipeline, test 20 SNPs
 ================
 SCGM & MW
-2024-04-02
+2024-04-03
 
 Load packages
 
@@ -22,8 +22,12 @@ library(miscTools)
 Read data and convert to different formats
 
 ``` r
-species_name = "Aalba_20SNPs" #change species name
-data_file <- paste("data/", species_name, ".vcf.gz", sep="")
+# keep only random SNPs in VCF file using a bed file to filter in vcftools
+# system2("functions/extract_random.sh") # change input and output file names in functions/extract_random.sh
+
+species_name = "Aalba" #change species name if needed
+suffix = "_20SNPs" #change suffix if needed
+data_file <- paste("data/", species_name, suffix, ".vcf.gz", sep="")
 data_vcf <- read.vcfR(data_file) 
 ```
 
@@ -46,8 +50,6 @@ data_vcf <- read.vcfR(data_file)
     ## All variants processed
 
 ``` r
-# subset VCF files based on bed file - do it in vcftools!
-
 # adegenet formats (genind and genpop)
 data_genind <- vcfR2genind(data_vcf)
 pop(data_genind) <- substr(indNames(data_genind), 1,8) #takes pop name from the first 8 digits of sample name, e.g. AUT00215
@@ -91,13 +93,13 @@ individuals_per_pop <- table(pop_labels)
 data_hierfstat <- genind2hierfstat(data_genind,pop=NULL)
 
 # bayescan format to external file
-write.bayescan(dat=data_hierfstat,diploid=TRUE,fn="data_bayescan") #writing this file can take about 6 hours for 90k SNPs; better to store these files once generated!
+write.bayescan(dat=data_hierfstat,diploid=TRUE,fn="bayescan/data_bayescan")
 
 # structure format to external file
 write.struct(dat=data_hierfstat,ilab=individual_names,pop=NULL,MARKERNAMES=FALSE,MISSING=-9,fname="snmf/data_structure") 
 
 # geno format to external file
-struct2geno (input.file="snmf/data_structure", ploidy=2, FORMAT=2, extra.row=0, extra.column=1) #writting this file can also take quite long
+struct2geno (input.file="snmf/data_structure", ploidy=2, FORMAT=2, extra.row=0, extra.column=1) #writing this file can take quite long
 ```
 
     ## Input file in the STRUCTURE format. The genotypic matrix has 413 individuals and 20 markers. 
@@ -134,29 +136,29 @@ barchart (data_snmf, best_K, best_run, sort.by.Q = T, col = rainbow(best_K), bor
 ![](FORGENIUS-pipeline_files/figure-gfm/Estimate%20admixture%20coefficients-2.png)<!-- -->
 
     ## $order
-    ##   [1]  13  28  40  46  47  52  61  73  76  83  85  86  99 101 102 103 105 122
-    ##  [19] 132 167 170 174 176 187 192 193 207 209 212 218 230 277 278 280 281 291
-    ##  [37] 292 293 296 307 319 331 340 363 371 372 373 382 384 401 404 412   1   2
-    ##  [55]   3   6   7   8   9  11  12  15  17  18  19  20  21  23  25  26  29  31
-    ##  [73]  35  36  37  38  39  41  42  43  44  45  48  49  50  51  53  55  56  57
-    ##  [91]  58  65  66  67  69  70  72  74  75  78  80  81  82  84  87  88  89  90
-    ## [109]  91  92  93  94  95  96  97  98 104 106 107 108 109 110 111 112 113 115
-    ## [127] 116 117 118 120 121 123 124 125 126 127 128 129 131 133 134 135 137 139
-    ## [145] 140 141 144 145 146 147 148 149 150 151 152 153 155 156 157 158 159 160
-    ## [163] 161 162 163 166 168 169 173 175 177 178 179 183 184 185 186 190 194 197
-    ## [181] 199 200 201 204 205 215 216 217 219 220 221 222 223 224 225 226 227 228
-    ## [199] 231 233 234 235 236 237 238 239 242 243 244 245 246 247 248 253 256 259
-    ## [217] 261 262 267 268 272 276 283 284 289 290 294 295 297 298 299 303 304 306
-    ## [235] 309 312 314 317 321 328 333 334 335 337 339 343 345 346 347 349 352 353
-    ## [253] 356 358 361 362 365 367 368 375 378 379 383 386 388 389 390 393 395 398
-    ## [271] 402 407 408 409   4   5  10  22  27  33  64  68  71  77 100 172 181 182
-    ## [289] 191 203 210 213 229 232 270 271 282 285 287 300 357 366 392  16  24  30
-    ## [307]  32  34  54  62  63 114 119 130 136 138 142 154 164 165 180 189 195 198
-    ## [325] 202 206 208 211 214 241 252 254 255 257 258 260 263 264 266 273 275 279
-    ## [343] 286 301 305 311 313 315 316 318 320 322 323 327 329 330 332 336 344 348
-    ## [361] 359 360 364 370 374 387 391 394 396 397 400 403 406 410 411 413  14  59
-    ## [379]  60  79 143 171 188 196 240 249 250 251 265 269 274 288 302 308 310 324
-    ## [397] 325 326 338 341 342 350 351 354 355 369 376 377 380 381 385 399 405
+    ##   [1]  14  16  79  83 143 208 211 212 269 273 274 275 279 281 285 288 318 320
+    ##  [19] 338 350 355 357 381  11  23  24  37  38  56  59  65  69  70  72  74  80
+    ##  [37]  82  84  88 139 171 194 200 224 226 238 242 243 246 248 250 256 259 261
+    ##  [55] 262 270 276 282 289 294 299 300 303 304 308 309 314 317 325 328 334 339
+    ##  [73] 343 345 346 349 352 353 367 376 378 384 386 392 398 399 408 409   4   5
+    ##  [91]  10  13  22  27  28  33  40  46  47  52  61  64  68  71  73  76  86  99
+    ## [109] 100 101 102 103 105 122 132 167 170 172 174 176 178 181 182 187 191 192
+    ## [127] 193 207 209 210 213 218 229 271 278 280 287 291 292 296 305 307 319 331
+    ## [145] 340 363 366 371 372 373 382 401 404 412  30  32  34  54  60  62  63 114
+    ## [163] 119 130 136 138 142 154 164 165 180 188 189 195 196 198 202 206 214 240
+    ## [181] 241 249 251 252 254 255 257 258 260 263 264 265 266 293 301 302 310 311
+    ## [199] 313 315 316 322 323 324 326 327 329 330 332 336 341 342 344 348 351 354
+    ## [217] 359 360 364 369 370 374 377 380 385 387 391 394 396 397 400 403 405 406
+    ## [235] 410 411 413   1   2   3   6   7   8   9  12  15  17  18  19  20  21  25
+    ## [253]  26  29  31  35  36  39  41  42  43  44  45  48  49  50  51  53  55  57
+    ## [271]  58  66  67  75  77  78  81  85  87  89  90  91  92  93  94  95  96  97
+    ## [289]  98 104 106 107 108 109 110 111 112 113 115 116 117 118 120 121 123 124
+    ## [307] 125 126 127 128 129 131 133 134 135 137 140 141 144 145 146 147 148 149
+    ## [325] 150 151 152 153 155 156 157 158 159 160 161 162 163 166 168 169 173 175
+    ## [343] 177 179 183 184 185 186 190 197 199 201 203 204 205 215 216 217 219 220
+    ## [361] 221 222 223 225 227 228 230 231 232 233 234 235 236 237 239 244 245 247
+    ## [379] 253 267 268 272 277 283 284 286 290 295 297 298 306 312 321 333 335 337
+    ## [397] 347 356 358 361 362 365 368 375 379 383 388 389 390 393 395 402 407
 
 ``` r
 # estimate ancestry coefficients by pop
@@ -220,14 +222,10 @@ ave_pairwise_fst<-rowMeans(pairwise_WCfst, na.rm = TRUE)
 # Population-specific Fst from bayescan
 
 #If you are running RStudio in Windows 10
-system2("powershell", arg = c("-file", "bayescan.ps1")) #check out running parameters in ps1 file; bayescan is very slow, took about 5 hours for 15 pops and 14k SNPs using 12 CPUs and standard parameters
-```
+#system2("powershell", arg = c("-file", "bayescan.ps1")) #check out running parameters in ps1 file; bayescan is very slow in Windows, took about 5 hours for 15 pops and 14k SNPs using 12 CPUs and standard parameters
 
-    ## Warning in system2("powershell", arg = c("-file", "bayescan.ps1")): error in
-    ## running command
-
-``` r
 #If you are running RStudio in Linux
+system2("./bayescan/BayeScan2.1_linux64bits", arg = "bayescan/data_bayescan -n 5000 -thin 10 -nbp 10 -pilot 5000 -burn 10000 -pr_odds 1000 -od bayescan/results")
 
 source ("bayescan/plot_R.r")
 plot_bayescan("bayescan/results/data_bayescan_fst.txt",add_text=T,pos=0.02,size=0.7,FDR=0.05)
@@ -256,6 +254,6 @@ names (table_basic_stats) = c("GCU", "N", "nb_loci", "polymorphic_loci", "Hs", "
 
 # merge dataframes in a single table
 table_results <- merge(table_basic_stats, q_by_pop, by.x = "GCU", by.y = "Group.1") # merge dataframes by GCU name, it orders the new dataframe alphabetically
-data_print <- paste("results/table_results", species_name, ".csv", sep="")
-write.csv(table_results,"results/table_results_Aalba_20SNPs.csv")
+data_print <- paste("results/table_results", species_name, suffix, ".csv", sep="")
+write.csv(table_results, data_print)
 ```
