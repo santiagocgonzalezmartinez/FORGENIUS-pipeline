@@ -27,12 +27,13 @@ library(miscTools)
 Read data and convert to different formats
 
 ```{r read data}
+# keep only random SNPs in VCF file using a bed file to filter in vcftools
+# system2("functions/extract_random.sh") # change input and output file names in functions/extract_random.sh
 
-species_name = "Aalba_SNP_sampleFilt_random" #change species name
-data_file <- paste("data/", species_name, ".vcf.gz", sep="")
+species_name = "Aalba" #change species name if needed
+suffix = "_20SNPs" #change suffix if needed
+data_file <- paste("data/", species_name, suffix, ".vcf.gz", sep="")
 data_vcf <- read.vcfR(data_file) 
-
-# subset VCF files based on bed file - do it in vcftools!
 
 # adegenet formats (genind and genpop)
 data_genind <- vcfR2genind(data_vcf)
@@ -171,6 +172,6 @@ names (table_basic_stats) = c("GCU", "N", "nb_loci", "polymorphic_loci", "Hs", "
 
 # merge dataframes in a single table
 table_results <- merge(table_basic_stats, q_by_pop, by.x = "GCU", by.y = "Group.1") # merge dataframes by GCU name, it orders the new dataframe alphabetically
-data_print <- paste("results/table_results", species_name, ".csv", sep="")
-write.csv(table_results,"results/table_results_Aalba_20SNPs.csv")
+data_print <- paste("results/table_results", species_name, suffix, ".csv", sep="")
+write.csv(table_results, data_print)
 ```
