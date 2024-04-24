@@ -22,23 +22,63 @@ library(dplyr)
 library(mapplots)
 library(shapefiles)
 library(miscTools)
+library(dartR)
+library(poppr)
+
+# maybe needed, to check:
+#library(knitr)
+#library(htmltools)
+#library(stringr)
+#library(kableExtra)
+#library(radiant.data)
+
+
+# Function to build tables
+kable_mydf <- function(x, boldfirstcolumn,font_size){
+  x %>% 
+    kable() %>%  
+    kable_styling(font_size=font_size,
+                  bootstrap_options = c("stripped","hover", "condensed"), full_width = F) %>% 
+    {if(boldfirstcolumn == TRUE) column_spec(., 1, bold = T) else .}
+}
 ```
 
-Read data and convert to different formats
+Read data, filtering and convert to different formats
 
 ```{r read data}
 # keep only random SNPs in VCF file using a bed file to filter in vcftools
 # system2("functions/extract_random.sh") # change input and output file names in functions/extract_random.sh
 
+# read data from VCF into genind format
 species_name = "Aalba" #change species name if needed
 suffix = "_20SNPs" #change suffix if needed
 data_file <- paste("data/", species_name, suffix, ".vcf.gz", sep="")
 data_vcf <- read.vcfR(data_file) 
-
-# adegenet formats (genind and genpop)
 data_genind <- vcfR2genind(data_vcf)
 pop(data_genind) <- substr(indNames(data_genind), 1,8) #takes pop name from the first 8 digits of sample name, e.g. AUT00215
-individual_names<-indNames(data_genind) #extract individual names
+
+# read data from genotype file (e.g., from Axiom chips) into genind format
+#data <- read.table("data/POPGEN_data_curated_Affx_2use_JULY2022_miss30.txt", header=T)
+#data[1:10,1:10] %>% kable_mydf(boldfirstcolumn = F, font_size = 11) # visualization
+#data_genind <- df2genind(X = data[, -(1:2)], sep="/", pop = data[, 2], ind.names = data[, 1], NA.char ="NA") #change column numbers, separator or missing data string if needed
+
+# Remove loci with too much missing data from genind object
+#data_genind <- missingno(data_genind, type = "loci", cutoff = 0.05, quiet = FALSE, freq = FALSE)
+
+# Remove individuals with too much missing data from genind object
+#data_genind <- missingno(data_genind, type = "geno", cutoff = 0.05, quiet = FALSE, freq = FALSE)
+
+# Filter genind by locus list
+#loci2keep <- scan(file="gea_outliers.txt", what=character()) # read list of loci to keep
+#data_genind = data_genind[loc=loci2keep] # filter by locus name in list
+
+# Filter by Minor Allele Frequency (MAF) from genind object
+#data_genind <- informloci(data_genind, cutoff = 2/nInd(data_genind), MAF = 0.01, quiet = FALSE)
+
+# extract individual names
+individual_names<-indNames(data_genind)
+
+# genpop format (don't mistake wiwth genepop format, below)
 data_genpop <- genind2genpop(data_genind)
 print(data_genpop)
 pop_names<-popNames(data_genpop)
@@ -59,10 +99,17 @@ write.struct(dat=data_hierfstat,ilab=individual_names,pop=NULL,MARKERNAMES=FALSE
 # geno format to external file
 struct2geno (input.file="snmf/data_structure", ploidy=2, FORMAT=2, extra.row=0, extra.column=1) #writing this file can take quite long
 
-# genepop format to external file - need to be fixed or try plink
-#source("functions/TJ_genind2genepop_function.R")
-#genind2genepop(data_genind,file = "data_genepop.txt")
+# genepop format to external file
+data_gl <- gi2gl(data_genind) # convert first to genlight object
 
+data_genepop <- gl2genepop(
+  data_gl,
+  outfile = "data_genepop",
+  outpath = "./metapop",
+  pop_order = "alphabetic",
+  output_format = "2_digits",
+  verbose = 5
+) 
 ```
 
 Run admixture analysis with LEA
