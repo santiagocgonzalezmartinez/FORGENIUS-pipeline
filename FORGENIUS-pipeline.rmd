@@ -180,12 +180,22 @@ nb_loci <- rowSums(allele_freq != "NA")/2
 polymoprhic_loci <- 1-(monomorphic_counts/nb_loci)
 ```
 
-Compute basic stats with hierfstat
+Compute genetic diveristy and inbreeding stats with hierfstat & metapop2
 
 ```{r genetic diversity & inbreeding}
+# Compute basic statistics
 Hs <- Hs(data_hierfstat)
 Ho <- Ho(data_hierfstat)
 Fis <- 1-(Ho/Hs)
+
+# Allelic diversity partition with metapop2
+system2("./metapop/metapop", arg = "metapop/data_genepop metapop/config")
+file.copy("res_run_FULL.md", "metapop/results")
+file.copy("res_run_p.csv", "metapop/results")
+file.remove("res_run_FULL.md")
+file.remove("res_run_p.csv")
+
+
 ```
 
 Compute genetic distinctness

@@ -1,0 +1,26 @@
+# Configuration file for Metapop2
+
+# This file would run the population analysis to assess the contribution of each subpopulation to global diversity for descriptive population genetics or conservation purposes.
+
+#################################################################################
+#                                General options                                #
+#################################################################################
+name = run		# Identification for this set of parameters. It will be included as part of results' filenames. Do not use withespaces
+format = gp		# The format of the input datafile [ped, mtp, gp, pedigree]
+debug = false		# Debug mode. Set true to print extra info
+dec = 4			# Floating point precision
+nucleotide = false	# Use numeric [false] or nucleotide [true] notation in the input file genotypes
+rmatrix =		# Relationship matrix file
+save_rmatrix = false	# Saves a file with the coancestry matrix
+ploidy = 2		# Sets the ploidy level
+seed = 1234		# Seed for pseudo-random numbers generation
+
+################################################################################
+#                             Population analysis                              #
+################################################################################
+NeiChesser = false	# Obtain F stats with Nei & Chesser's correction for sample size (For those cases analysing samples and not the whole populations)
+rarefaction = true	# Apply rarefaction method in calculation of Allelic Diversity
+rareN = 0		# Value for rarefaction sample size. It should be lower than the smallest population size. Set to 0 to get automatically the value of the lowest population size
+bootstrap =	0	# Number of bootstrap replicates (for computing confidence intervals)
+alpha =		0.95	# Level of significance for bootstrap confidence intervals
+
