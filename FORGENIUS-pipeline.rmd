@@ -194,8 +194,6 @@ file.copy("res_run_FULL.md", "metapop/results")
 file.copy("res_run_p.csv", "metapop/results")
 file.remove("res_run_FULL.md")
 file.remove("res_run_p.csv")
-
-
 ```
 
 Compute genetic distinctness
