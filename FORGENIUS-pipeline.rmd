@@ -82,6 +82,7 @@ individual_names<-indNames(data_genind)
 data_genpop <- genind2genpop(data_genind)
 print(data_genpop)
 pop_names<-popNames(data_genpop)
+nb_pop<-length(pop_names)
 
 # counting individuals per population
 pop_labels <- data_genind@pop
@@ -180,20 +181,97 @@ nb_loci <- rowSums(allele_freq != "NA")/2
 polymoprhic_loci <- 1-(monomorphic_counts/nb_loci)
 ```
 
-Compute genetic diveristy and inbreeding stats with hierfstat & metapop2
+Compute genetic diveristy and inbreeding stats with hierfstat
 
 ```{r genetic diversity & inbreeding}
 # Compute basic statistics
 Hs <- Hs(data_hierfstat)
 Ho <- Ho(data_hierfstat)
 Fis <- 1-(Ho/Hs)
+```
 
-# Allelic diversity partition with metapop2
+Compute population allelic contributions with metapop2
+
+```{r genetic and allelic diversity partitions}
+# Genetic and allelic diversity partitions with metapop2
 system2("./metapop/metapop", arg = "metapop/data_genepop metapop/config")
+
+# Clean-up
 file.copy("res_run_FULL.md", "metapop/results")
 file.copy("res_run_p.csv", "metapop/results")
 file.remove("res_run_FULL.md")
 file.remove("res_run_p.csv")
+
+# Read all lines from the file
+file_path <- "metapop/results/res_run_FULL.md"
+lines <- readLines(file_path)
+
+# GENETIC DIVERSITY CONTRIBUTIONS
+# Identify the start of the table
+start_line <- grep("Percentage of loss \\(\\+\\) or gain \\(-\\) of gene diversity after removal of each subpopulation", lines) + 4
+
+# Extract the lines containing the table data (next 3 lines)
+table_lines <- lines[start_line:(start_line + (nb_pop-1))]
+
+# Clean up the lines: remove leading/trailing spaces and split by '|' character
+table_data <- lapply(table_lines, function(line) {
+  # Remove extra spaces and split by '|'
+  values <- strsplit(trimws(line), "\\|")[[1]]
+  # Further clean the values by trimming and removing any extra characters
+  trimws(values)
+})
+
+# Convert list of vectors to a data frame
+contrib_div <- as.data.frame(do.call(rbind, table_data), stringsAsFactors = FALSE)
+
+# Set column names appropriately
+names(contrib_div) <- c("ID1", "cHs", "cDg", "cHt")
+
+# Add pop levels
+contrib_div <- contrib_div %>%
+        mutate(GCU=pop_names,
+              .after=ID1)
+
+# Convert to numeric
+contrib_div$cHs <- as.numeric(contrib_div$cHs)
+contrib_div$cDg <- as.numeric(contrib_div$cDg)
+contrib_div$cHt <- as.numeric(contrib_div$cHt)
+
+# ALLELIC DIVERSITY CONTRIBUTIONS
+# Identify the start of the table
+start_line <- grep("Percentage of loss \\(\\+\\) or gain \\(-\\) of allelic diversity after removal of each subpopulation", lines) + 4
+
+# Extract the lines containing the table data (next 3 lines)
+table_lines <- lines[start_line:(start_line + (nb_pop-1))]
+
+# Clean up the lines: remove leading/trailing spaces and split by '|' character
+table_data <- lapply(table_lines, function(line) {
+  # Remove extra spaces and split by '|'
+  values <- strsplit(trimws(line), "\\|")[[1]]
+  # Further clean the values by trimming and removing any extra characters
+  trimws(values)
+})
+
+# Convert list of vectors to a data frame
+contrib_a <- as.data.frame(do.call(rbind, table_data), stringsAsFactors = FALSE)
+
+# Set column names appropriately
+names(contrib_a) <- c("ID2", "cAs", "cDa", "cAt")
+
+# Add pop levels
+contrib_a <- contrib_a %>%
+        mutate(GCU=pop_names,
+              .after=ID2)
+
+# Convert to numeric
+contrib_a$cAs <- as.numeric(contrib_a$cAs)
+contrib_a$cDa <- as.numeric(contrib_a$cDa)
+contrib_a$cAt <- as.numeric(contrib_a$cAt)
+
+# Merge dataframes
+contrib <- merge(contrib_div, contrib_a, by = "GCU") # Careful, merge() reorder the populations by alphabetical order (as in the output)
+contrib <- subset(contrib, select = -c(ID1, ID2))
+str(contrib)
 ```
 
 Compute genetic distinctness
@@ -226,7 +304,9 @@ table_basic_stats<-data.frame(unlist(individuals_per_pop), unlist(nb_loci), unli
 names (table_basic_stats) = c("GCU", "N", "nb_loci", "polymorphic_loci", "Hs", "Fis", "ave_pairwise_fst", "pop_specific_fst")
 
 # merge dataframes in a single table
-table_results <- merge(table_basic_stats, q_by_pop, by.x = "GCU", by.y = "Group.1") # merge dataframes by GCU name, it orders the new dataframe alphabetically
-data_print <- paste("results/table_results", species_name, suffix, ".csv", sep="")
-write.csv(table_results, data_print)
+table_results <- merge(table_basic_stats, q_by_pop, by.x = "GCU", by.y = "Group.1")
+table_results_contrib <- merge(table_results, contrib, by = "GCU")
+# merge dataframes by GCU name, it orders the new dataframe alphabetically
+data_print <- paste("results/table_results_contrib_", species_name, suffix, ".csv", sep="")
+write.csv(table_results_contrib, data_print)
 ```
