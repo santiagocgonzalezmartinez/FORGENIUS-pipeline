@@ -24,6 +24,7 @@ library(shapefiles)
 library(miscTools)
 library(dartR)
 library(poppr)
+library(ggplot2)
 
 # maybe needed, to check:
 #library(knitr)
@@ -190,7 +191,7 @@ Ho <- Ho(data_hierfstat)
 Fis <- 1-(Ho/Hs)
 ```
 
-Compute population allelic contributions with metapop2
+Compute population genetic and allelic diversity contributions with metapop2
 
 ```{r genetic and allelic diversity partitions}
 # Genetic and allelic diversity partitions with metapop2
@@ -210,7 +211,7 @@ lines <- readLines(file_path)
 # Identify the start of the table
 start_line <- grep("Percentage of loss \\(\\+\\) or gain \\(-\\) of gene diversity after removal of each subpopulation", lines) + 4
 
-# Extract the lines containing the table data (next 3 lines)
+# Extract the lines containing the table data
 table_lines <- lines[start_line:(start_line + (nb_pop-1))]
 
 # Clean up the lines: remove leading/trailing spaces and split by '|' character
@@ -228,9 +229,7 @@ contrib_div <- as.data.frame(do.call(rbind, table_data), stringsAsFactors = FALS
 names(contrib_div) <- c("ID1", "cHs", "cDg", "cHt")
 
 # Add pop levels
-contrib_div <- contrib_div %>%
-        mutate(GCU=pop_names,
-              .after=ID1)
+contrib_div <- contrib_div %>% mutate(GCU=pop_names, .after=ID1)
 
 # Convert to numeric
 contrib_div$cHs <- as.numeric(contrib_div$cHs)
@@ -259,9 +258,7 @@ contrib_a <- as.data.frame(do.call(rbind, table_data), stringsAsFactors = FALSE)
 names(contrib_a) <- c("ID2", "cAs", "cDa", "cAt")
 
 # Add pop levels
-contrib_a <- contrib_a %>%
-        mutate(GCU=pop_names,
-              .after=ID2)
+contrib_a <- contrib_a %>% mutate(GCU=pop_names, .after=ID2)
 
 # Convert to numeric
 contrib_a$cAs <- as.numeric(contrib_a$cAs)
@@ -272,6 +269,27 @@ contrib_a$cAt <- as.numeric(contrib_a$cAt)
 contrib <- merge(contrib_div, contrib_a, by = "GCU") # Careful, merge() reorder the populations by alphabetical order (as in the output)
 contrib <- subset(contrib, select = -c(ID1, ID2))
 str(contrib)
+
+# Create contribution figures
+# Genetic diversity
+contrib_temp1 <- subset(contrib, select = c(GCU, cHs))
+colnames(contrib_temp1) <- c("GCU", "values")
+contrib_temp1 <- contrib_temp1 %>% mutate(Partition="Diversity", .after=values)
+contrib_temp2 <- subset(contrib, select = c(GCU, cDg))
+colnames(contrib_temp2) <- c("GCU", "values")
+contrib_temp2 <- contrib_temp2 %>% mutate(Partition="Differentiation", .after=values)
+contrib_fig_div <- rbind(contrib_temp1,contrib_temp2)
+ggplot(contrib_fig_div, aes(x = GCU, y = values))+ geom_col(aes(fill = Partition), width = 0.7) + scale_y_continuous() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) + xlab("GCUs") + ylab("Contribution % (genetic diversity)") + scale_alpha_manual(values = 1) + labs(alpha="")
+
+# Allelic diversity
+contrib_temp3 <- subset(contrib, select = c(GCU, cAs))
+colnames(contrib_temp3) <- c("GCU", "values")
+contrib_temp3 <- contrib_temp3 %>% mutate(Partition="Diversity", .after=values)
+contrib_temp4 <- subset(contrib, select = c(GCU, cDa))
+colnames(contrib_temp4) <- c("GCU", "values")
+contrib_temp4 <- contrib_temp4 %>% mutate(Partition="Differentiation", .after=values)
+contrib_fig_allelic <- rbind(contrib_temp3,contrib_temp4)
+ggplot(contrib_fig_allelic, aes(x = GCU, y = values))+ geom_col(aes(fill = Partition), width = 0.7) + scale_y_continuous() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) + xlab("GCUs") + ylab("Contribution % (allelic diversity)") + scale_alpha_manual(values = 1) + labs(alpha="")
 ```
 
 Compute genetic distinctness
