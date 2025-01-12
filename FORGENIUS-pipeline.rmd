@@ -25,12 +25,12 @@ library(miscTools)
 library(dartR)
 library(poppr)
 library(ggplot2)
+library(kableExtra)
 
 # maybe needed, to check:
 #library(knitr)
 #library(htmltools)
 #library(stringr)
-#library(kableExtra)
 #library(radiant.data)
 
 
@@ -50,18 +50,21 @@ Read data, filtering and convert to different formats
 # keep only random SNPs in VCF file using a bed file to filter in vcftools
 # system2("functions/extract_random.sh") # change input and output file names in functions/extract_random.sh
 
-# read data from VCF into genind format
+# define file name
 species_name = "Aalba" #change species name if needed
 suffix = "_20SNPs" #change suffix if needed
+
+# read data from VCF into genind format
 data_file <- paste("data/", species_name, suffix, ".vcf.gz", sep="")
 data_vcf <- read.vcfR(data_file) 
 data_genind <- vcfR2genind(data_vcf)
 pop(data_genind) <- substr(indNames(data_genind), 1,8) #takes pop name from the first 8 digits of sample name, e.g. AUT00215
 
 # read data from genotype file (e.g., from Axiom chips) into genind format
-#data <- read.table("data/POPGEN_data_curated_Affx_2use_JULY2022_miss30.txt", header=T)
-#data[1:10,1:10] %>% kable_mydf(boldfirstcolumn = F, font_size = 11) # visualization
-#data_genind <- df2genind(X = data[, -(1:2)], sep="/", pop = data[, 2], ind.names = data[, 1], NA.char ="NA") #change column numbers, separator or missing data string if needed
+# data_file <- paste("data/", species_name, suffix, ".txt", sep="")
+# data <- read.table(data_file, header=T)
+# data[1:10,1:10] %>% kable_mydf(boldfirstcolumn = F, font_size = 11) # visualization
+# data_genind <- df2genind(X = data[, -(1:2)], sep="/", pop = data[, 2], ind.names = data[, 1], NA.char ="NA") #change column numbers, separator or missing data string if needed
 
 # Remove loci with too much missing data from genind object
 #data_genind <- missingno(data_genind, type = "loci", cutoff = 0.05, quiet = FALSE, freq = FALSE)
@@ -74,7 +77,7 @@ pop(data_genind) <- substr(indNames(data_genind), 1,8) #takes pop name from the 
 #data_genind = data_genind[loc=loci2keep] # filter by locus name in list
 
 # Filter by Minor Allele Frequency (MAF) from genind object
-#data_genind <- informloci(data_genind, cutoff = 2/nInd(data_genind), MAF = 0.01, quiet = FALSE)
+data_genind <- informloci(data_genind, cutoff = 2/nInd(data_genind), MAF = 0.00, quiet = FALSE) # Keep at least 0.00, to remove monomorphic loci in the full dataset
 
 # extract individual names
 individual_names<-indNames(data_genind)
@@ -174,15 +177,17 @@ Compute number of polymorphic loci per population
 ```{r number of polymorphic loci}
 
 # Estimate allele frequency in adegenet
-allele_freq <- tab(data_genpop)
+allele_freq <- tab(data_genpop, freq=TRUE)
 
 # Count monomorphic loci and missing loci per population
 monomorphic_counts <- rowSums(allele_freq == 1)
 nb_loci <- rowSums(allele_freq != "NA")/2
-polymoprhic_loci <- 1-(monomorphic_counts/nb_loci)
+nb_loci_zero <- rowSums(allele_freq == 0)
+nb_loci_noNA = nb_loci - (nb_loci_zero-monomorphic_counts)/2
+polymoprhic_loci <- 1-(monomorphic_counts/nb_loci_noNA)
 ```
 
-Compute genetic diveristy and inbreeding stats with hierfstat
+Compute genetic diversity and inbreeding stats with hierfstat
 
 ```{r genetic diversity & inbreeding}
 # Compute basic statistics
@@ -198,8 +203,8 @@ Compute population genetic and allelic diversity contributions with metapop2
 system2("./metapop/metapop", arg = "metapop/data_genepop metapop/config")
 
 # Clean-up
-file.copy("res_run_FULL.md", "metapop/results")
-file.copy("res_run_p.csv", "metapop/results")
+file.copy("res_run_FULL.md", "metapop/results", overwrite = TRUE)
+file.copy("res_run_p.csv", "metapop/results",  overwrite = TRUE)
 file.remove("res_run_FULL.md")
 file.remove("res_run_p.csv")
 

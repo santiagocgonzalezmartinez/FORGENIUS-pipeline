@@ -1,7 +1,7 @@
 FORGENIUS-pipeline, test 20 SNPs
 ================
 SCGM & MW
-2024-10-18
+2025-01-12
 
 Load packages
 
@@ -20,12 +20,12 @@ library(miscTools)
 library(dartR)
 library(poppr)
 library(ggplot2)
+library(kableExtra)
 
 # maybe needed, to check:
 #library(knitr)
 #library(htmltools)
 #library(stringr)
-#library(kableExtra)
 #library(radiant.data)
 
 
@@ -45,9 +45,11 @@ Read data, filtering and convert to different formats
 # keep only random SNPs in VCF file using a bed file to filter in vcftools
 # system2("functions/extract_random.sh") # change input and output file names in functions/extract_random.sh
 
-# read data from VCF into genind format
+# define file name
 species_name = "Aalba" #change species name if needed
 suffix = "_20SNPs" #change suffix if needed
+
+# read data from VCF into genind format
 data_file <- paste("data/", species_name, suffix, ".vcf.gz", sep="")
 data_vcf <- read.vcfR(data_file) 
 ```
@@ -75,9 +77,10 @@ data_genind <- vcfR2genind(data_vcf)
 pop(data_genind) <- substr(indNames(data_genind), 1,8) #takes pop name from the first 8 digits of sample name, e.g. AUT00215
 
 # read data from genotype file (e.g., from Axiom chips) into genind format
-#data <- read.table("data/POPGEN_data_curated_Affx_2use_JULY2022_miss30.txt", header=T)
-#data[1:10,1:10] %>% kable_mydf(boldfirstcolumn = F, font_size = 11) # visualization
-#data_genind <- df2genind(X = data[, -(1:2)], sep="/", pop = data[, 2], ind.names = data[, 1], NA.char ="NA") #change column numbers, separator or missing data string if needed
+# data_file <- paste("data/", species_name, suffix, ".txt", sep="")
+# data <- read.table(data_file, header=T)
+# data[1:10,1:10] %>% kable_mydf(boldfirstcolumn = F, font_size = 11) # visualization
+# data_genind <- df2genind(X = data[, -(1:2)], sep="/", pop = data[, 2], ind.names = data[, 1], NA.char ="NA") #change column numbers, separator or missing data string if needed
 
 # Remove loci with too much missing data from genind object
 #data_genind <- missingno(data_genind, type = "loci", cutoff = 0.05, quiet = FALSE, freq = FALSE)
@@ -90,8 +93,17 @@ pop(data_genind) <- substr(indNames(data_genind), 1,8) #takes pop name from the 
 #data_genind = data_genind[loc=loci2keep] # filter by locus name in list
 
 # Filter by Minor Allele Frequency (MAF) from genind object
-#data_genind <- informloci(data_genind, cutoff = 2/nInd(data_genind), MAF = 0.01, quiet = FALSE)
+data_genind <- informloci(data_genind, cutoff = 2/nInd(data_genind), MAF = 0.00, quiet = FALSE) # Keep at least 0.00, to remove monomorphic loci in the full dataset
+```
 
+    ## cutoff value: 0.484261501210654 % ( 2 samples ).
+
+    ## MAF         : 0
+
+    ## 
+    ## All sites polymorphic
+
+``` r
 # extract individual names
 individual_names<-indNames(data_genind)
 
@@ -218,29 +230,29 @@ barchart (data_snmf, best_K, best_run, sort.by.Q = T, col = rainbow(best_K), bor
 ![](FORGENIUS-pipeline_files/figure-gfm/Estimate%20admixture%20coefficients-2.png)<!-- -->
 
     ## $order
-    ##   [1]  14  16  79  83 143 206 208 211 212 269 273 274 275 279 281 288 305 307
-    ##  [19] 318 320 338 350 355 357 370 374 381  11  19  23  27  37  38  56  59  65
-    ##  [37]  69  70  72  74  76  80  82  84  88 125 139 170 171 181 190 191 194 200
-    ##  [55] 224 242 243 246 248 250 256 259 270 271 276 282 285 289 290 292 294 297
-    ##  [73] 300 303 308 309 317 328 334 339 340 343 345 346 349 352 366 367 378 384
-    ##  [91] 386 392 398 399 408  30  32  34  54  60  62  63 114 119 130 136 138 142
-    ## [109] 154 164 165 180 188 189 195 196 198 202 214 240 241 247 249 251 252 255
-    ## [127] 257 258 260 263 264 265 266 286 293 301 302 310 311 313 315 316 322 323
-    ## [145] 324 325 326 327 329 330 332 336 341 342 344 348 351 354 360 364 369 376
-    ## [163] 377 380 385 387 391 394 396 397 400 403 405 406 410 411 413   3   9  12
-    ## [181]  13  20  21  24  25  28  29  33  35  40  43  44  45  47  50  51  52  53
-    ## [199]  61  64  67  73  75  78  81  85  86  87  89  92  94  99 101 103 106 109
-    ## [217] 112 115 116 117 120 121 122 126 127 128 129 132 134 135 137 140 155 162
-    ## [235] 163 166 167 168 173 178 179 183 185 187 192 193 197 199 204 205 207 209
-    ## [253] 218 219 220 229 230 233 234 239 244 254 262 272 277 278 280 283 287 291
-    ## [271] 296 299 306 321 331 333 337 347 356 358 359 363 368 371 373 379 382 383
-    ## [289] 389 401 404 407 412   1   2   4   5   6   7   8  10  15  17  18  22  26
-    ## [307]  31  36  39  41  42  46  48  49  55  57  58  66  68  71  77  90  91  93
-    ## [325]  95  96  97  98 100 102 104 105 107 108 110 111 113 118 123 124 131 133
-    ## [343] 141 144 145 146 147 148 149 150 151 152 153 156 157 158 159 160 161 169
-    ## [361] 172 174 175 176 177 182 184 186 201 203 210 213 215 216 217 221 222 223
-    ## [379] 225 226 227 228 231 232 235 236 237 238 245 253 261 267 268 284 295 298
-    ## [397] 304 312 314 319 335 353 361 362 365 372 375 388 390 393 395 402 409
+    ##   [1]  27  33  59  64  68  76  77 181 191 210 243 270 271 282 285 287 300 392
+    ##  [19] 399  14  16  79  83 143 206 208 211 212 269 273 274 275 278 279 281 288
+    ##  [37] 305 318 320 338 350 355 357 381   4   5  10  13  22  28  40  46  47  52
+    ##  [55]  61  71  73  86  99 100 101 102 103 105 122 132 167 170 172 174 176 182
+    ##  [73] 187 192 193 207 209 213 229 230 280 291 292 296 307 319 331 340 363 366
+    ##  [91] 370 371 372 373 382 384 401 404 412  24  30  32  34  54  60  62  63 114
+    ## [109] 119 130 136 138 142 154 164 165 180 188 189 195 196 197 198 202 214 240
+    ## [127] 241 249 251 252 254 255 257 258 260 263 264 265 266 286 293 301 302 310
+    ## [145] 311 313 315 316 322 323 324 325 326 327 329 330 332 336 341 342 344 348
+    ## [163] 351 354 359 360 364 369 374 376 377 380 385 387 391 394 396 397 400 403
+    ## [181] 405 406 410 411 413   1   2   3   6   7   8   9  11  12  15  17  18  19
+    ## [199]  20  21  23  25  26  29  31  35  36  37  38  39  41  42  43  44  45  48
+    ## [217]  49  50  51  53  55  56  57  58  65  66  67  69  70  72  74  75  78  80
+    ## [235]  81  82  84  85  87  88  89  90  91  92  93  94  95  96  97  98 104 106
+    ## [253] 107 108 109 110 111 112 113 115 116 117 118 120 121 123 124 125 126 127
+    ## [271] 128 129 131 133 134 135 137 139 140 141 144 145 146 147 148 149 150 151
+    ## [289] 152 153 155 156 157 158 159 160 161 162 163 166 168 169 171 173 175 177
+    ## [307] 178 179 183 184 185 186 190 194 199 200 201 203 204 205 215 216 217 218
+    ## [325] 219 220 221 222 223 224 225 226 227 228 231 232 233 234 235 236 237 238
+    ## [343] 239 242 244 245 246 247 248 250 253 256 259 261 262 267 268 272 276 277
+    ## [361] 283 284 289 290 294 295 297 298 299 303 304 306 308 309 312 314 317 321
+    ## [379] 328 333 334 335 337 339 343 345 346 347 349 352 353 356 358 361 362 365
+    ## [397] 367 368 375 378 379 383 386 388 389 390 393 395 398 402 407 408 409
 
 ``` r
 # estimate ancestry coefficients by pop
@@ -278,15 +290,17 @@ Compute number of polymorphic loci per population
 
 ``` r
 # Estimate allele frequency in adegenet
-allele_freq <- tab(data_genpop)
+allele_freq <- tab(data_genpop, freq=TRUE)
 
 # Count monomorphic loci and missing loci per population
 monomorphic_counts <- rowSums(allele_freq == 1)
 nb_loci <- rowSums(allele_freq != "NA")/2
-polymoprhic_loci <- 1-(monomorphic_counts/nb_loci)
+nb_loci_zero <- rowSums(allele_freq == 0)
+nb_loci_noNA = nb_loci - (nb_loci_zero-monomorphic_counts)/2
+polymoprhic_loci <- 1-(monomorphic_counts/nb_loci_noNA)
 ```
 
-Compute genetic diveristy and inbreeding stats with hierfstat
+Compute genetic diversity and inbreeding stats with hierfstat
 
 ``` r
 # Compute basic statistics
@@ -303,16 +317,16 @@ metapop2
 system2("./metapop/metapop", arg = "metapop/data_genepop metapop/config")
 
 # Clean-up
-file.copy("res_run_FULL.md", "metapop/results")
+file.copy("res_run_FULL.md", "metapop/results", overwrite = TRUE)
 ```
 
-    ## [1] FALSE
+    ## [1] TRUE
 
 ``` r
-file.copy("res_run_p.csv", "metapop/results")
+file.copy("res_run_p.csv", "metapop/results",  overwrite = TRUE)
 ```
 
-    ## [1] FALSE
+    ## [1] TRUE
 
 ``` r
 file.remove("res_run_FULL.md")
