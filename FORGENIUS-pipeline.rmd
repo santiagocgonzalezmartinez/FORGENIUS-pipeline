@@ -1,5 +1,5 @@
 ---
-title: "FORGENIUS-pipeline, test 20 SNPs"
+title: "FORGENIUS-pipeline, test 20 SNPs" # Change title!
 author: "SCGM & MW"
 date: "`r Sys.Date()`"
 output: github_document
@@ -66,6 +66,9 @@ pop(data_genind) <- substr(indNames(data_genind), 1,8) #takes pop name from the 
 # data[1:10,1:10] %>% kable_mydf(boldfirstcolumn = F, font_size = 11) # use for visualization of input data but careful as it may give an error when rendering!
 # data_genind <- df2genind(X = data[, -(1:2)], sep="/", pop = data[, 2], ind.names = data[, 1], NA.char ="NA") #change column numbers, separator or missing data string if needed
 
+# Remove monomorphic loci in dataset
+data_genind <- informloci(data_genind, cutoff = 0.00, MAF = 0.00, quiet = FALSE)
+
 # Remove loci with too much missing data from genind object
 #data_genind <- missingno(data_genind, type = "loci", cutoff = 0.05, quiet = FALSE, freq = FALSE)
 
@@ -76,8 +79,8 @@ pop(data_genind) <- substr(indNames(data_genind), 1,8) #takes pop name from the 
 #loci2keep <- scan(file="gea_outliers.txt", what=character()) # read list of loci to keep
 #data_genind = data_genind[loc=loci2keep] # filter by locus name in list
 
-# Filter by Minor Allele Frequency (MAF) from genind object
-data_genind <- informloci(data_genind, cutoff = 2/nInd(data_genind), MAF = 0.00, quiet = FALSE) # Keep at least 0.00, to remove monomorphic loci in the full dataset
+# Filter by  either percentage of differentiating genotypes or Minor Allele Frequency (MAF) from genind object
+# data_genind <- informloci(data_genind, cutoff = 2/nInd(data_genind), MAF = 0.01, quiet = FALSE)
 
 # extract individual names
 individual_names<-indNames(data_genind)
