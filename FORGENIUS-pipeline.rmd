@@ -50,7 +50,7 @@ Read data, filtering and convert to different formats
 # keep only random SNPs in VCF file using a bed file to filter in vcftools
 # system2("functions/extract_random.sh") # change input and output file names in functions/extract_random.sh
 
-# define file name
+# define file name for input and output
 species_name = "Aalba" #change species name if needed
 suffix = "_20SNPs" #change suffix if needed
 
