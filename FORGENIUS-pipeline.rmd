@@ -63,7 +63,7 @@ pop(data_genind) <- substr(indNames(data_genind), 1,8) #takes pop name from the 
 # read data from genotype file (e.g., from Axiom chips) into genind format
 # data_file <- paste("data/", species_name, suffix, ".txt", sep="")
 # data <- read.table(data_file, header=T)
-# data[1:10,1:10] %>% kable_mydf(boldfirstcolumn = F, font_size = 11) # visualization
+# data[1:10,1:10] %>% kable_mydf(boldfirstcolumn = F, font_size = 11) # use for visualization of input data but careful as it may give an error when rendering!
 # data_genind <- df2genind(X = data[, -(1:2)], sep="/", pop = data[, 2], ind.names = data[, 1], NA.char ="NA") #change column numbers, separator or missing data string if needed
 
 # Remove loci with too much missing data from genind object
